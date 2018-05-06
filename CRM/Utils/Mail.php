@@ -203,8 +203,13 @@ class CRM_Utils_Mail {
       CRM_Utils_Array::value('toEmail', $params),
       FALSE
     );
-    $headers['Cc'] = CRM_Utils_Array::value('cc', $params);
-    $headers['Bcc'] = CRM_Utils_Array::value('bcc', $params);
+
+    // On some servers mail() fails when 'Cc' or 'Bcc' headers are defined but empty.
+    foreach (['Cc', 'Bcc'] as $optionalHeader) {
+      if (!empty($params[$optionalHeader])) {
+        $headers[$optionalHeader] = $params[$optionalHeader];
+      }
+    }
     $headers['Subject'] = CRM_Utils_Array::value('subject', $params);
     $headers['Content-Type'] = $htmlMessage ? 'multipart/mixed; charset=utf-8' : 'text/plain; charset=utf-8';
     $headers['Content-Disposition'] = 'inline';
@@ -289,14 +294,6 @@ class CRM_Utils_Mail {
 
     if (is_object($mailer)) {
       $errorScope = CRM_Core_TemporaryErrorScope::ignoreException();
-      // On some servers mail() fails when 'Cc' or 'Bcc' headers are defined but empty.
-      // FIXME: Can we unset Cc/Bcc headers for all mail backends if they are empty?
-      if (empty($headers['Cc'])) {
-        unset($headers['Cc']);
-      }
-      if (empty($headers['Bcc'])) {
-        unset($headers['Bcc']);
-      }
       $result = $mailer->send($to, $headers, $message);
       if (is_a($result, 'PEAR_Error')) {
         $message = self::errorMessage($mailer, $result);
