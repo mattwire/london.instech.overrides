@@ -206,10 +206,12 @@ class CRM_Utils_Mail {
 
     // On some servers mail() fails when 'Cc' or 'Bcc' headers are defined but empty.
     foreach (['Cc', 'Bcc'] as $optionalHeader) {
-      if (!empty($params[$optionalHeader])) {
-        $headers[$optionalHeader] = $params[$optionalHeader];
+      $headers[$optionalHeader] = CRM_Utils_Array::value(strtolower($optionalHeader), $params);
+      if (empty($headers[$optionalHeader])) {
+        unset($headers[$optionalHeader]);
       }
     }
+
     $headers['Subject'] = CRM_Utils_Array::value('subject', $params);
     $headers['Content-Type'] = $htmlMessage ? 'multipart/mixed; charset=utf-8' : 'text/plain; charset=utf-8';
     $headers['Content-Disposition'] = 'inline';
